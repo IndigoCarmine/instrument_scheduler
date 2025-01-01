@@ -1,0 +1,6 @@
+example:
+  - hello:
+scheduling:
+  - scheduleInstrument:
+  - deleteSchedule:
+  - getAllSchedule:

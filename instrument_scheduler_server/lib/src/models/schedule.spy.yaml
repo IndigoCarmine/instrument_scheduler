@@ -1,0 +1,10 @@
+
+class: Schedule
+table: schedule
+fields:
+    instrumentId: int
+    startTime: DateTime
+    endTime: DateTime
+    userName: String
+    note: String
+

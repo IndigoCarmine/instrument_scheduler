@@ -1,0 +1,4 @@
+type: server
+
+client_package_path: ../instrument_scheduler_client
+server_test_tools_path: test/integration/test_tools
