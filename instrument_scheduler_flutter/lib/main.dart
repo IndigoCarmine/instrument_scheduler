@@ -1,12 +1,12 @@
 import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:instrument_scheduler_client/instrument_scheduler_client.dart';
 import 'package:flutter/material.dart';
 import 'package:instrument_scheduler_flutter/filtered_calender.dart';
-import 'package:serverpod_flutter/serverpod_flutter.dart';
 
 import 'package:calendar_view/calendar_view.dart';
+import 'package:instrument_scheduler_flutter/user_setting_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import "schedule_provider.dart";
 
@@ -51,9 +51,23 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
+  String _userName = '';
+
   @override
   void initState() {
     super.initState();
+
+    SharedPreferences.getInstance().then((prefs) {
+      setState(() {
+        _userName = prefs.getString('userName') ?? '';
+      });
+
+      if (_userName.isEmpty) {
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+          return UserSettingPage();
+        }));
+      }
+    });
   }
 
   int selected_page = 0;

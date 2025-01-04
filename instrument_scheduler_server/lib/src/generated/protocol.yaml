@@ -1,6 +1,7 @@
 example:
   - hello:
 scheduling:
-  - scheduleInstrument:
+  - addSchedule:
   - deleteSchedule:
   - getAllSchedule:
+  - getHashCode:

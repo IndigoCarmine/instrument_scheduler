@@ -35,24 +35,30 @@ class EndpointScheduling extends _i1.EndpointRef {
   @override
   String get name => 'scheduling';
 
-  _i2.Future<void> scheduleInstrument(_i3.Schedule schedule) =>
-      caller.callServerEndpoint<void>(
+  _i2.Future<bool> addSchedule(_i3.Schedule schedule) =>
+      caller.callServerEndpoint<bool>(
         'scheduling',
-        'scheduleInstrument',
+        'addSchedule',
         {'schedule': schedule},
       );
 
-  _i2.Future<void> deleteSchedule(_i3.Schedule schedule) =>
+  _i2.Future<void> deleteSchedule(int schedule_id) =>
       caller.callServerEndpoint<void>(
         'scheduling',
         'deleteSchedule',
-        {'schedule': schedule},
+        {'schedule_id': schedule_id},
       );
 
   _i2.Future<List<_i3.Schedule>> getAllSchedule() =>
       caller.callServerEndpoint<List<_i3.Schedule>>(
         'scheduling',
         'getAllSchedule',
+        {},
+      );
+
+  _i2.Future<int> getHashCode() => caller.callServerEndpoint<int>(
+        'scheduling',
+        'getHashCode',
         {},
       );
 }

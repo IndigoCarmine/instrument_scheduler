@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:instrument_scheduler_client/instrument_scheduler_client.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
 
@@ -14,6 +13,7 @@ class ScheduleNotifier extends StateNotifier<List<Schedule>?> {
   }
 
   Timer? _timer;
+  int scheduleHashCode = 1000; // initial value
 
   void _startFetchingSchedules() {
     _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
@@ -23,11 +23,13 @@ class ScheduleNotifier extends StateNotifier<List<Schedule>?> {
 
   Future<void> fetchAllSchedules() async {
     try {
-      var result = await client.scheduling.getAllSchedule();
-      if (state == null || !listEquals(state, result)) {
-        state = result;
-        // Notify about the change
-      }
+      // check if the schedule has been updated
+      final new_hashcode = await client.scheduling.getHashCode();
+      if (new_hashcode == scheduleHashCode) return;
+
+      // update state
+      scheduleHashCode = new_hashcode;
+      state = await client.scheduling.getAllSchedule();
     } catch (e) {
       print(e);
     }
@@ -57,15 +59,15 @@ bool listEquals(List<Schedule>? list1, List<Schedule>? list2) {
 void removeAllSchedules() async {
   await client.scheduling.getAllSchedule().then((result) {
     result.forEach((schedule) {
-      client.scheduling.deleteSchedule(schedule);
+      client.scheduling.deleteSchedule(schedule.id!);
     });
   });
 }
 
-void addSchedule(Schedule schedule) async {
-  await client.scheduling.scheduleInstrument(schedule);
+Future<bool> addSchedule(Schedule schedule) async {
+  return await client.scheduling.addSchedule(schedule);
 }
 
-void removeSchedule(Schedule schedule) async {
-  await client.scheduling.deleteSchedule(schedule);
+void removeSchedule(int schedule_id) async {
+  await client.scheduling.deleteSchedule(schedule_id);
 }

@@ -38,42 +38,57 @@ class FilteredCalender extends ConsumerWidget {
     return WeekView(
       // WeekView is a widget from the calendar_view package
       controller: controller,
-      onDateTap: (date) {
+      onDateTap: (date) async {
         print('Date tapped: $date');
 
         // Add a new schedule
         var new_schedule = Schedule(
             startTime: date,
-            endTime: date.add(Duration(hours: 3)),
+            endTime: date.add(Duration(hours: 1)),
             instrumentId: instrument_ids.first,
             userName: 'New User',
             note: 'New Note');
 
-        addSchedule(new_schedule);
+        final successed = await addSchedule(new_schedule);
+        if (!successed) {
+          //show snackbar
+          var snackBar = SnackBar(
+            content: Text('Failed to add schedule'),
+          );
+          ScaffoldMessenger.of(context).showSnackBar(snackBar);
+          return;
+        }
       },
       onEventTap: (data, daytime) async {
         print('Event tapped: $data');
         var new_data = await showDayTimeSettingDialog(context, data[0]);
 
-        if (new_data != null) {
-          print('New data: $data');
-          addSchedule(Schedule(
-            startTime: new_data.startTime!,
-            endTime: new_data.endTime!,
-            instrumentId: instrument_ids.first,
-            userName: new_data.title,
-            note: 'New Note',
-          ));
-          // removeSchedule(
-          //   Schedule(
-          //     startTime: data[0].startTime!,
-          //     endTime: data[0].endTime!,
-          //     instrumentId: instrument_ids.first,
-          //     userName: data[0].title,
-          //     note: 'New Note',
-          //   ),
-          // );
+        print('New data: $data');
+        var success = await addSchedule(Schedule(
+          startTime: new_data.startTime!,
+          endTime: new_data.endTime!,
+          instrumentId: instrument_ids.first,
+          userName: new_data.title,
+          note: 'New Note',
+        ));
+
+        if (!success) {
+          //show snackbar
+          var snackBar = SnackBar(
+            content: Text('Failed to add schedule'),
+          );
+          ScaffoldMessenger.of(context).showSnackBar(snackBar);
+          return;
         }
+
+        var old_data = ref
+            .read(scheduleProvider)!
+            .where((element) => element.startTime == new_data.startTime)
+            .first;
+
+        removeSchedule(
+          old_data.id!,
+        );
       },
     );
   }

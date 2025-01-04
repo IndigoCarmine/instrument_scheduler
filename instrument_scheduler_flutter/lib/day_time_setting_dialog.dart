@@ -64,6 +64,7 @@ class _DayTimeSettingDialogState extends State<DayTimeSettingDialog> {
                   _endTime = end;
                 });
               },
+              hideButtons: true,
             ),
             ElevatedButton(
               onPressed: () {
