@@ -10,12 +10,16 @@ class SchedulingEndpoint extends Endpoint {
         'Scheduling instrument ${schedule.instrumentId} at ${schedule.startTime}');
 
     // check if the instrument has already been scheduled at the same time
+    // The start and end time of the schedule is fixed to avoid the case where the schedules are continuous
+    final start_fixed = schedule.startTime.add(const Duration(seconds: 1));
+    final end_fixed = schedule.endTime.subtract(const Duration(seconds: 1));
     var schedules = await Schedule.db.find(session, where: (scheduleTable) {
-      return scheduleTable.instrumentId.equals(schedule.instrumentId) &
-          (scheduleTable.startTime
-                  .between(schedule.startTime, schedule.endTime) |
-              scheduleTable.endTime
-                  .between(schedule.startTime, schedule.endTime));
+      return scheduleTable.id
+              .notEquals(schedule.id) & // Exclude the schedule itself
+          scheduleTable.instrumentId.equals(
+              schedule.instrumentId) & // the check is for the same instrument
+          (scheduleTable.startTime.between(start_fixed, end_fixed) |
+              scheduleTable.endTime.between(start_fixed, end_fixed));
     });
 
     if (schedules.isEmpty) {
@@ -27,8 +31,12 @@ class SchedulingEndpoint extends Endpoint {
     }
   }
 
+  Future<void> updateSchedule(Session session, Schedule schedule) async {
+    await Schedule.db.updateRow(session, schedule);
+    _updateHashcode(session);
+  }
+
   Future<void> deleteSchedule(Session session, int schedule_id) async {
-    // Delete the schedule
     await Schedule.db.deleteWhere(session, where: (scaduleTable) {
       return scaduleTable.id.equals(schedule_id);
     });
@@ -36,7 +44,6 @@ class SchedulingEndpoint extends Endpoint {
   }
 
   Future<List<Schedule>> getAllSchedule(Session session) async {
-    // Get the schedule for the instrument
     return await Schedule.db.find(session);
   }
 
@@ -46,6 +53,7 @@ class SchedulingEndpoint extends Endpoint {
     scheduleHashCode = schedules.hashCode;
   }
 
+  // This method is used to get the hash code of the schedule list
   Future<int> getHashCode(Session session) async {
     return scheduleHashCode;
   }

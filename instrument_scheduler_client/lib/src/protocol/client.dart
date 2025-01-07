@@ -42,6 +42,13 @@ class EndpointScheduling extends _i1.EndpointRef {
         {'schedule': schedule},
       );
 
+  _i2.Future<void> updateSchedule(_i3.Schedule schedule) =>
+      caller.callServerEndpoint<void>(
+        'scheduling',
+        'updateSchedule',
+        {'schedule': schedule},
+      );
+
   _i2.Future<void> deleteSchedule(int schedule_id) =>
       caller.callServerEndpoint<void>(
         'scheduling',

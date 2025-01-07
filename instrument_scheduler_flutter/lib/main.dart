@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
+import 'package:instrument_scheduler_client/instrument_scheduler_client.dart';
+import 'package:instrument_scheduler_flutter/fake_provider.dart';
 import 'package:instrument_scheduler_flutter/filtered_calender.dart';
 
 import 'package:calendar_view/calendar_view.dart';
@@ -13,7 +15,12 @@ import "schedule_provider.dart";
 var event_controller = EventController();
 
 void main() {
-  runApp(const ProviderScope(child: MyApp()));
+  // runApp(ProviderScope(child: MyApp(), overrides: [
+  //   scheduleProvider.overrideWith((ref) => FakeScheduleNotifier([]))
+  // ]));
+  runApp(ProviderScope(
+    child: MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -24,7 +31,7 @@ class MyApp extends StatelessWidget {
     return CalendarControllerProvider(
       controller: event_controller,
       child: MaterialApp(
-        title: 'Serverpod Demo',
+        title: 'Instrument Scheduler',
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
@@ -35,7 +42,7 @@ class MyApp extends StatelessWidget {
             PointerDeviceKind.touch,
           },
         ),
-        home: const MyHomePage(title: 'Serverpod Example'),
+        home: const MyHomePage(title: 'Instrument Scheduler'),
       ),
     );
   }
@@ -70,16 +77,15 @@ class MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  int selected_page = 0;
-
-  final List<List<int>> instrument_ids = [
-    [1, 2, 3, 4, 5],
-    [1],
-    [2],
-    [3],
-    [4],
-    [5],
+  late List<CalenderSettings> instrument_ids = [
+    CalenderSettings("Your reservations", (schedule) {
+      return schedule.userName == _userName;
+    }, 0),
+    CalenderSettings('Instrument 1', idFilter([1]), 1),
+    CalenderSettings('Instrument 2', idFilter([2]), 2),
+    CalenderSettings('All Instruments', allFilter(), 0),
   ];
+  int selected_page = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -97,15 +103,28 @@ class MyHomePageState extends State<MyHomePage> {
             );
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                return UserSettingPage();
+              }));
+            },
+          ),
+        ],
       ),
       drawer: Drawer(
           child: ListView(
-        padding: EdgeInsets.zero,
+        padding: EdgeInsets.all(10),
         children: <Widget>[
               DrawerHeader(
-                child: Text('Serverpod Example'),
+                child: Container(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                        "Logged in as $_userName \n Select an instrument")),
                 decoration: BoxDecoration(
-                  color: Colors.blue,
+                  color: Theme.of(context).secondaryHeaderColor,
                 ),
               ),
             ] +
@@ -113,24 +132,43 @@ class MyHomePageState extends State<MyHomePage> {
                 .asMap()
                 .entries
                 .map((entry) => ListTile(
-                      title: Text('Instrument ${entry.key + 1}'),
+                      title: Text(entry.value.title),
                       onTap: () {
                         setState(() {
                           selected_page = entry.key;
                         });
+                        // Close the drawer
+                        Navigator.pop(context);
                       },
                     ))
                 .toList(),
       )),
       body: Row(children: [
         Expanded(
-          child: FilteredCalender(instrument_ids[selected_page]),
+          child: FilteredCalender(
+              instrument_ids[selected_page].isSelectedSchedule,
+              _userName,
+              instrument_ids[selected_page].instrumentId),
         ),
       ]),
       floatingActionButton: FloatingActionButton(onPressed: () {
         //for debugging
-        removeAllSchedules();
+        // removeAllSchedules();
+
+        // final shared_preferences = SharedPreferences.getInstance();
+        // shared_preferences.then((prefs) {
+        //   prefs.remove('userName');
+        // });
       }),
     );
   }
+}
+
+class CalenderSettings {
+  const CalenderSettings(
+      this.title, this.isSelectedSchedule, this.instrumentId);
+
+  final String title;
+  final bool Function(Schedule) isSelectedSchedule;
+  final int instrumentId;
 }

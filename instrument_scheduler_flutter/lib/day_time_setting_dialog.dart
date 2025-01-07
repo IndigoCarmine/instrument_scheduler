@@ -1,11 +1,25 @@
 // time and day setting dialog
-import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
+import 'package:instrument_scheduler_client/instrument_scheduler_client.dart';
 import 'package:time_range_picker/time_range_picker.dart';
 
-Future<CalendarEventData> showDayTimeSettingDialog(
-    BuildContext context, CalendarEventData data) async {
-  var new_data = await showDialog(
+sealed class ScheduleResult {
+  final Schedule schedule;
+
+  ScheduleResult(this.schedule);
+}
+
+class ScheduleSave extends ScheduleResult {
+  ScheduleSave(Schedule schedule) : super(schedule);
+}
+
+class ScheduleRemove extends ScheduleResult {
+  ScheduleRemove(Schedule schedule) : super(schedule);
+}
+
+Future<ScheduleResult> showDayTimeSettingDialog(
+    BuildContext context, Schedule data) async {
+  var new_data = await showDialog<ScheduleResult>(
     context: context,
     builder: (BuildContext context) {
       return DayTimeSettingDialog(data: data);
@@ -14,32 +28,36 @@ Future<CalendarEventData> showDayTimeSettingDialog(
 
   if (new_data != null) {
     print('New data: $new_data');
-    return new_data as CalendarEventData;
+    return new_data;
   } else {
-    return data;
+    return ScheduleSave(data);
   }
 }
 
 class DayTimeSettingDialog extends StatefulWidget {
   const DayTimeSettingDialog({super.key, required this.data});
 
-  final CalendarEventData? data;
+  final Schedule data;
 
   @override
   State<DayTimeSettingDialog> createState() => _DayTimeSettingDialogState();
 }
 
 class _DayTimeSettingDialogState extends State<DayTimeSettingDialog> {
-  TimeOfDay? _startTime;
-  TimeOfDay? _endTime;
+  late TimeOfDay _startTime;
+  late TimeOfDay _endTime;
+  late String _note;
+
+  late TextEditingController _noteController;
 
   @override
   void initState() {
     super.initState();
-    _startTime =
-        TimeOfDay.fromDateTime(widget.data!.startTime ?? DateTime.now());
-    _endTime = TimeOfDay.fromDateTime(
-        widget.data!.endTime ?? DateTime.now().add(Duration(hours: 1)));
+    _startTime = TimeOfDay.fromDateTime(widget.data.startTime.toLocal());
+    _endTime = TimeOfDay.fromDateTime(widget.data.endTime.toLocal());
+    _note = widget.data.note;
+
+    _noteController = TextEditingController(text: _note);
   }
 
   @override
@@ -52,8 +70,8 @@ class _DayTimeSettingDialogState extends State<DayTimeSettingDialog> {
           mainAxisSize: MainAxisSize.max,
           children: <Widget>[
             TimeRangePicker(
-              start: _startTime!,
-              end: _endTime!,
+              start: _startTime,
+              end: _endTime,
               onStartChange: (start) {
                 setState(() {
                   _startTime = start;
@@ -66,29 +84,58 @@ class _DayTimeSettingDialogState extends State<DayTimeSettingDialog> {
               },
               hideButtons: true,
             ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop(CalendarEventData(
-                  title: widget.data!.title,
-                  date: widget.data!.date,
-                  startTime: DateTime(
-                    widget.data!.date.year,
-                    widget.data!.date.month,
-                    widget.data!.date.day,
-                    _startTime!.hour,
-                    _startTime!.minute,
-                  ),
-                  endTime: DateTime(
-                    widget.data!.date.year,
-                    widget.data!.date.month,
-                    widget.data!.date.day,
-                    _endTime!.hour,
-                    _endTime!.minute,
-                  ),
-                  color: widget.data!.color,
-                ));
+            Text(widget.data.userName),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Note',
+              ),
+              controller: _noteController,
+              onChanged: (value) {
+                _note = value;
+                setState(() {});
               },
-              child: const Text('Save'),
+            ),
+            const SizedBox(height: 50),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    final localStartTime = widget.data.startTime.toLocal();
+                    final localEndTime = widget.data.endTime.toLocal();
+                    Navigator.of(context).pop(
+                      ScheduleSave(Schedule(
+                        id: widget.data.id,
+                        startTime: DateTime(
+                          localStartTime.year,
+                          localStartTime.month,
+                          localStartTime.day,
+                          _startTime.hour,
+                          _startTime.minute,
+                        ),
+                        endTime: DateTime(
+                          localEndTime.year,
+                          localEndTime.month,
+                          localEndTime.day,
+                          _endTime.hour,
+                          _endTime.minute,
+                        ),
+                        instrumentId: widget.data.instrumentId,
+                        userName: widget.data.userName,
+                        note: _note,
+                      )),
+                    );
+                  },
+                  child: const Text('Save'),
+                ),
+                const SizedBox(width: 30),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(ScheduleRemove(widget.data));
+                  },
+                  child: const Text('Remove'),
+                ),
+              ],
             ),
           ],
         ),

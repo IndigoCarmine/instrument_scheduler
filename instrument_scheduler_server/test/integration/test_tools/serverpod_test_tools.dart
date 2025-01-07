@@ -197,6 +197,35 @@ class _SchedulingEndpoint {
     });
   }
 
+  _i3.Future<void> updateSchedule(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i4.Schedule schedule,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+        endpoint: 'scheduling',
+        method: 'updateSchedule',
+      );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'scheduling',
+          methodName: 'updateSchedule',
+          parameters: _i1.testObjectToJson({'schedule': schedule}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _i3.Future<void> deleteSchedule(
     _i1.TestSessionBuilder sessionBuilder,
     int schedule_id,

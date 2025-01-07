@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:instrument_scheduler_client/instrument_scheduler_client.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
 
+final IsOfflineDebug = false;
+
 var client = Client('http://$localhost:8080/')
   ..connectivityMonitor = FlutterConnectivityMonitor();
 
-class ScheduleNotifier extends StateNotifier<List<Schedule>?> {
-  ScheduleNotifier() : super(null) {
+class ScheduleNotifier extends StateNotifier<List<Schedule>> {
+  ScheduleNotifier() : super([]) {
     _startFetchingSchedules();
   }
 
@@ -43,7 +45,7 @@ class ScheduleNotifier extends StateNotifier<List<Schedule>?> {
 }
 
 final scheduleProvider =
-    StateNotifierProvider<ScheduleNotifier, List<Schedule>?>((ref) {
+    StateNotifierProvider<ScheduleNotifier, List<Schedule>>((ref) {
   return ScheduleNotifier();
 });
 
@@ -57,6 +59,7 @@ bool listEquals(List<Schedule>? list1, List<Schedule>? list2) {
 }
 
 void removeAllSchedules() async {
+  if (IsOfflineDebug) return;
   await client.scheduling.getAllSchedule().then((result) {
     result.forEach((schedule) {
       client.scheduling.deleteSchedule(schedule.id!);
@@ -65,9 +68,11 @@ void removeAllSchedules() async {
 }
 
 Future<bool> addSchedule(Schedule schedule) async {
+  if (IsOfflineDebug) return true;
   return await client.scheduling.addSchedule(schedule);
 }
 
 void removeSchedule(int schedule_id) async {
+  if (IsOfflineDebug) return;
   await client.scheduling.deleteSchedule(schedule_id);
 }
